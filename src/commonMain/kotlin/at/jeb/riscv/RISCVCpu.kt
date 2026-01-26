@@ -10,8 +10,10 @@ class RISCVCpu {
     val instructionMemory = InstructionMemory()
     val register = Register()
 
-    private var pc: UInt = 0u
-    private var instrCount: UInt = 0u
+    var pc: UInt = 0u
+        private set
+    var instrCount: UInt = 0u
+        private set
 
     init {
         register.write(Register.RegisterName.SP, memory.size)
@@ -41,7 +43,6 @@ class RISCVCpu {
 
     fun printCurrentState() {
         println("PC: $pc")
-//        println("Instructions: $instructionMemory")
         println("Registers:")
         register.printRegisters()
         println("Memory:")

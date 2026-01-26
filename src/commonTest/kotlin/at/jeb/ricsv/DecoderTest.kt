@@ -97,7 +97,7 @@ class DecoderTest {
     @Test
     fun decoderTestNegativeJumpAndLinkImmediate() {
         // given
-        val instruction = 0b1111111_11110_00000_000_00001_1101111u // jal x1, -2
+        val instruction = 0b1111111_11111_11111_111_00001_1101111u // jal x1, -2
         val expectedInstruction = UJTypeInstructionTypes.JAL
         val expectedOpcode = 0b1101111u
         val expectedRd = 0b00001u
@@ -113,5 +113,48 @@ class DecoderTest {
         assertEquals(expectedOpcode, actual.data.opcode)
         assertEquals(expectedRd, actual.data.rd)
         assertEquals(expectedImm, actual.data.imm)
+    }
+
+    @Test
+    fun decoderTestJAR() {
+        // given
+        val instruction = 0b0000000_00010_00000_000_00001_1101111u // jal x1, 32
+        val expectedInstruction = UJTypeInstructionTypes.JAL
+        val expectedOpcode = 0b1101111u
+        val expectedRd = 0b00001u
+        val expectedImm = 32
+
+        // when
+        val actual = Decoder.decodeInstruction(instruction)
+
+        // then
+        assertEquals(expectedInstruction, actual.type)
+        assertEquals(expectedOpcode, actual.data.opcode)
+        assertEquals(expectedRd, actual.data.rd)
+        assertEquals(expectedImm, actual.data.imm)
+    }
+
+    @Test
+    fun decoderTestswCommand() {
+        // given
+        val instruction = 0b1111111_11000_10000_010_11100_0100011u
+        val expectedInstruction = SInstructionTypes.SW
+        val expectedOpcode = 0b0100011u
+        val expectedFunct3 = 0b010u
+        val expectedRs1 = 0b10000u
+        val expectedRs2 = 0b11000u
+        val expectedImm = -24
+
+        // when
+        val actual = Decoder.decodeInstruction(instruction)
+
+        // then
+        assertEquals(expectedInstruction, actual.type)
+        assertEquals(expectedOpcode, actual.data.opcode)
+        assertEquals(expectedFunct3, actual.data.funct3)
+        assertEquals(expectedRs1, actual.data.rs1)
+        assertEquals(expectedRs2, actual.data.rs2)
+        assertEquals(expectedImm, actual.data.imm)
+
     }
 }
