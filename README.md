@@ -1,29 +1,71 @@
-[![official JetBrains project](https://jb.gg/badges/official-plastic.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.0-blue.svg?style=flat&logo=kotlin)](https://kotlinlang.org)
+# Risc V Simulator
 
-# Kotlin/Native Template
+This is a RISC-V simulator written in Kotlin, supporting the following targets:
+- [Kotlin/Native](#kotlinnative)
+- [Kotlin/JVM](#kotlinjvm)
+- [Kotlin/JS](#kotlinjs)
+- [Kotlin/Wasm](#kotlinwasm)
 
-A mostly-empty template to get started creating a Kotlin/Native project. 
+# Requirements:
+    - Java JDK 11 or higher
+    - JavaHome environment variable set
 
-## Requirements
+## Kotlin/Native
+For debugging Kotlin/Native applications, you need to install `libxcrypt-compat` library.
+On Windows you also need the `mingw-w64` toolchain installed and added to your PATH.
 
-# Fedora 38+
+### Running the Kotlin/Native target
+To run the Kotlin/Native target, use the following command:
 ```bash
-sudo dnf install libxcrypt-compat 
+# Available commands on Linux
+./gradlew runDebugExecutableLinuxX64
+./gradlew runDebugExecutableLinuxArm64
+./gradlew runReleaseExecutableLinuxX64
+./gradlew runReleaseExecutableLinuxArm64
+
+# Available commands on macOS
+./gradlew runDebugExecutableMacosX64
+./gradlew runDebugExecutableMacosArm64
+./gradlew runReleaseExecutableMacosX64
+./gradlew runReleaseExecutableMacosArm64
+
+# Available commands on Windows
+./gradlew runDebugExecutableMingwX64
+./gradlew runReleaseExecutableMingwX64
+
 ```
 
-## Getting Started
+## Kotlin/JVM
+To run the Kotlin/JVM target, use the following command:
+```bash
+./gradlew runJvm
+```
 
-1. On the project page, click on the `Use this template` button
-2. Click on the `Create a new repository` drop-down item
-3. Fill in the details of the new repository you'll be creating under your account
-4. Click the `Create repository` button
-5. Browse to your repository and make the needed changes there.
+## Kotlin/JS
+To run the Kotlin/JS target, use the following command:
+```bash
+./gradlew jsBrowserDevelopmentRun
+```
+or for production build:
+```bash
+./gradlew jsBrowserProductionRun
+```
+Then open `http://localhost:8080` in your web browser.
 
-## Code of conduct
+## Kotlin/Wasm
+To run the Kotlin/Wasm target, use the following command:
+```bash
+./gradlew wasmBrowserDevelopmentRun
+```
+or for production build:
+```bash
+./gradlew wasmBrowserProductionRun
+```
+Then open `http://localhost:8080` in your web browser.
 
-Please read [our code of conduct](https://github.com/jetbrains#code-of-conduct).
-
-## License
-
-The [kmp-native-wizard template](https://github.com/Kotlin/kmp-native-wizard/) is licensed under [CC0](https://creativecommons.org/publicdomain/zero/1.0/deed.en).
+## Running Tests
+To run the tests for all targets, use the following command:
+```bash
+./gradlew allTests
+```
+This will execute tests for Kotlin/Native, Kotlin/JVM, Kotlin/JS, and Kotlin/Wasm targets.

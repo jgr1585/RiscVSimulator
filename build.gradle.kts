@@ -1,5 +1,6 @@
-@file:OptIn(ExperimentalWasmDsl::class)
+@file:OptIn(ExperimentalWasmDsl::class, ExperimentalKotlinGradlePluginApi::class)
 
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
@@ -15,13 +16,15 @@ repositories {
 }
 
 kotlin {
-    compilerOptions {
-        // Opt-in for unsigned types for JVM target. Native target has it enabled by default.
-        optIn.add("kotlin.ExperimentalUnsignedTypes")
-    }
 
     // Add Kotlin/JVM target
-    jvm()
+    jvm {
+        compilerOptions {
+            optIn.add("kotlin.ExperimentalUnsignedTypes")
+        }
+        mainRun { mainClass = "MainKt" }
+
+    }
 
     // Add Kotlin/JS target
     js {
