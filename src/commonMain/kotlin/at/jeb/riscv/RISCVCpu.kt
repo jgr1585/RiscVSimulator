@@ -14,6 +14,8 @@ class RISCVCpu {
         private set
     var instrCount: UInt = 0u
         private set
+    var isHalted: Boolean = true
+        private set
 
     init {
         register.write(Register.RegisterName.SP, memory.size)
@@ -24,10 +26,13 @@ class RISCVCpu {
 
     private var decodedInst: Decoder.InstructionValue = Decoder.decodeInstruction(0x13u) // Default NOOP instruction (ADDI x0, x0, 0)
 
-    fun step() {
+    fun step(): Boolean {
+        if (isHalted) return false
+
         loadInstruction()
         instrCount += 1u
         executeInstruction()
+        return true
     }
 
     private fun loadInstruction() {
@@ -39,6 +44,7 @@ class RISCVCpu {
 
     fun loadProgram(program: UIntArray) {
         instructionMemory.load(program)
+        isHalted = false
     }
 
     fun printCurrentState() {
@@ -149,8 +155,13 @@ class RISCVCpu {
                         register.write(decodedInst.data.rd, returnAddress)
                         pc = targetAddress
 
-                        val written = register.read(decodedInst.data.rd)
-                        executedInstructionHistory.add("jalr x${decodedInst.data.rd}, ${decodedInst.data.imm}(x${decodedInst.data.rs1}) => x${decodedInst.data.rd} = $written, PC = $targetAddress")
+                        if (targetAddress == 0u) {
+                            isHalted = true
+                            executedInstructionHistory.add("jalr x${decodedInst.data.rd}, ${decodedInst.data.imm}(x${decodedInst.data.rs1}) => HALT triggered")
+                        } else {
+                            val written = register.read(decodedInst.data.rd)
+                            executedInstructionHistory.add("jalr x${decodedInst.data.rd}, ${decodedInst.data.imm}(x${decodedInst.data.rs1}) => x${decodedInst.data.rd} = $written, PC = $targetAddress")
+                        }
                     }
 
                     ITypeLoaders.MRET -> {

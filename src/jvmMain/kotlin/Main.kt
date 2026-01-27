@@ -1,6 +1,7 @@
 import at.jeb.riscv.RISCVCpu
 import at.jeb.riscv.extensions.readHexFromIntelFile
 import kotlinx.io.files.Path
+import kotlin.time.measureTime
 
 fun main() {
     val cpu = RISCVCpu()
@@ -11,9 +12,12 @@ fun main() {
 
     cpu.loadProgram(program)
 
-    try {
-        repeat (1000) {
-            cpu.step()
+    val time = try {
+        measureTime {
+            repeat (1000) {
+                // Limit to 1000 instructions or until halted
+                if(!cpu.step()) return@repeat
+            }
         }
     } catch (e: Exception) {
         println("CPU halted with exception: ${e.message}")
@@ -23,4 +27,6 @@ fun main() {
 
     println("Executed Instructions:")
     cpu.executedInstructionHistory.forEach(::println)
+
+    println("Execution Time: $time")
 }

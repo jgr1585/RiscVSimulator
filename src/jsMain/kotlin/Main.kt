@@ -5,12 +5,13 @@ import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.dom.clear
 import org.w3c.dom.HTMLBodyElement
 import org.w3c.dom.HTMLElement
 import org.w3c.fetch.Request
+import kotlin.time.Duration
+import kotlin.time.measureTime
 
 @OptIn(DelicateCoroutinesApi::class)
 fun main() {
@@ -24,11 +25,13 @@ fun main() {
 
             GlobalScope.launch {
                 try {
-                    while (true) {
-                        cpu.step()
-                        printToBody(cpu)
-                        delay(1000L)
+                    val time = measureTime {
+                        repeat (1000) {
+                            // Limit to 1000 instructions or until halted
+                            if(cpu.step()) return@repeat
+                        }
                     }
+                    printToBody(cpu, time)
                 } catch (e: Exception) {
                     console.log("CPU halted with exception: ${e.message}")
                 }
@@ -37,7 +40,7 @@ fun main() {
     })
 }
 
-fun printToBody(cpu: RISCVCpu) {
+fun printToBody(cpu: RISCVCpu, time: Duration) {
     val body = document.body as HTMLBodyElement
     val pre = document.createElement("pre") as HTMLElement
 
@@ -52,7 +55,9 @@ fun printToBody(cpu: RISCVCpu) {
         appendLine("Memory Dump:")
         //appendLine(cpu.memory.getMemoryDump())
         appendLine("Executed Instructions:")
-        cpu.executedInstructionHistory.forEach { appendLine(it) }
+        cpu.executedInstructionHistory.forEachIndexed { index, string -> appendLine("${index + 1}: $string") }
+
+        appendLine("Execution Time: $time")
     }
 
     body.clear()
