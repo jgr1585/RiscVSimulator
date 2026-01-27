@@ -1,3 +1,6 @@
+@file:OptIn(ExperimentalWasmDsl::class)
+
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -17,8 +20,10 @@ kotlin {
         optIn.add("kotlin.ExperimentalUnsignedTypes")
     }
 
+    // Add Kotlin/JVM target
     jvm()
 
+    // Add Kotlin/JS target
     js {
         browser {
             testTask {
@@ -30,6 +35,19 @@ kotlin {
         binaries.executable()
     }
 
+    // Add Kotlin/WASM target
+    wasmJs {
+        browser {
+            testTask {
+                useKarma {
+                    useChromium()
+                }
+            }
+        }
+        binaries.executable()
+    }
+
+    // Add Kotlin/Native target based on host OS
     val hostOs = System.getProperty("os.name")
     val isArm64 = System.getProperty("os.arch") == "aarch64"
     val isMingwX64 = hostOs.startsWith("Windows")
@@ -50,6 +68,7 @@ kotlin {
         }
     }
 
+    // Configure source sets and dependencies
     sourceSets {
         commonMain.dependencies {
             implementation(libs.kotlinxSerializationJson)
@@ -60,6 +79,9 @@ kotlin {
         }
         webMain.dependencies {
             implementation(libs.kotlinxCoroutinesCore)
+        }
+        wasmJsMain.dependencies {
+            implementation(libs.kotlinxBrowser)
         }
 
     }

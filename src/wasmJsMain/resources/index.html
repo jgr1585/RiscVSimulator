@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WASM Client</title>
+</head>
+<body>
+<script>
+    function fetchProgram(url) {
+        return fetch(url).then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.text();
+        });
+    }
+</script>
+<!--suppress HtmlUnknownTarget -->
+<script src="RISCVSimulator.js"></script>
+</body>
+</html>
