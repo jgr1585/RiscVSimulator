@@ -43,6 +43,7 @@ class RISCVCpu {
 
     fun printCurrentState() {
         println("PC: $pc")
+        println("Instruction Count: $instrCount")
         println("Registers:")
         register.printRegisters()
         println("Memory:")
@@ -148,7 +149,8 @@ class RISCVCpu {
                         register.write(decodedInst.data.rd, returnAddress)
                         pc = targetAddress
 
-                        executedInstructionHistory.add("jalr x${decodedInst.data.rd}, ${decodedInst.data.imm}(x${decodedInst.data.rs1}) => x${decodedInst.data.rd} = $returnAddress, PC = $targetAddress")
+                        val written = register.read(decodedInst.data.rd)
+                        executedInstructionHistory.add("jalr x${decodedInst.data.rd}, ${decodedInst.data.imm}(x${decodedInst.data.rs1}) => x${decodedInst.data.rd} = $written, PC = $targetAddress")
                     }
 
                     ITypeLoaders.MRET -> {
@@ -187,7 +189,8 @@ class RISCVCpu {
                         register.write(decodedInst.data.rd, returnAddress)
                         pc = targetAddress.toUInt()
 
-                        executedInstructionHistory.add("jal x${decodedInst.data.rd}, ${decodedInst.data.imm} => x${decodedInst.data.rd} = $returnAddress, PC = $targetAddress")
+                            val written = register.read(decodedInst.data.rd)
+                            executedInstructionHistory.add("jal x${decodedInst.data.rd}, ${decodedInst.data.imm} => x${decodedInst.data.rd} = $written, PC = $targetAddress")
                     }
                 }
             }

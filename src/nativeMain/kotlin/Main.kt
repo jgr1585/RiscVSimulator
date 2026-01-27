@@ -6,14 +6,14 @@ import kotlinx.io.files.Path
 fun main() {
     val cpu = RISCVCpu()
 
-    val programFile = "./resources/riscvsimtest.hex"
+    val programFile = "./resources/square.hex"
     val programPath = Path(programFile)
     val program = readHexFromIntelFile(programPath)
 
     cpu.loadProgram(program)
 
     try {
-        while (true) {
+        repeat (1000) {
             cpu.step()
         }
     } catch (e: Exception) {

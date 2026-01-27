@@ -51,6 +51,26 @@ data class STypeInstruction(val instruction: UInt) : InstructionData {
     override val funct7 get() = throw UnsupportedOperationException("S-Type instructions do not have funct7 field.")
 }
 
+data class SBTypeInstruction(val instruction: UInt) : InstructionData {
+    override val opcode = instruction and 0x7Fu // bits 0-6
+    override val funct3 = (instruction shr 12) and 0x7u // bits 12-14
+    override val rs1    = (instruction shr 15) and 0x1Fu // bits 15-19
+    override val rs2    = (instruction shr 20) and 0x1Fu // bits 20-24
+
+    // SB-type immediate is encoded as imm[12|10:5|4:1|11] in bits [31|30:25|11:8|7]
+    private val imm12   = (instruction shr 31) and 0x1u    // bit 31
+    private val imm10_5 = (instruction shr 25) and 0x3Fu  // bits 25-30 (6 bits)
+    private val imm4_1  = (instruction shr 8)  and 0xFu   // bits 8-11 (4 bits)
+    private val imm11   = (instruction shr 7)  and 0x1u    // bit 7
+
+    // combine and shift left by 1 (branch immediates are multiples of 2)
+    override val imm = signImm((imm12 shl 12) or (imm11 shl 11) or (imm10_5 shl 5) or (imm4_1 shl 1), 0x1000u)
+
+    // SB-Type instructions do not have rd or funct7 fields
+    override val rd     get() = throw UnsupportedOperationException("SB-Type instructions do not have rd field.")
+    override val funct7 get() = throw UnsupportedOperationException("SB-Type instructions do not have funct7 field.")
+}
+
 data class UTypeInstruction(val instruction: UInt) : InstructionData {
     override val opcode  = instruction          and 0x7Fu  // bits 0-6
     override val rd      = (instruction shr 7)  and 0x1Fu  // bits 7-11

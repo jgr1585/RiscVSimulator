@@ -33,13 +33,13 @@ class DecoderTest {
     @Test
     fun decoderAddiWithNegativeImmediateTest() {
         // given
-        val instruction = 0b111111100000_00001_000_00010_0010011u // addi x2, x1, -16
+        val instruction = 0b111111110000_00001_000_00010_0010011u // addi x2, x1, -16
         val expectedInstruction = IInstructionTypes.ADDI
         val expectedOpcode = 0b0010011u
         val expectedRd = 0b00010u
         val expectedFunct3 = 0b000u
         val expectedRs1 = 0b00001u
-        val expectedImm = -32
+        val expectedImm = -16
 
         // when
         val actual = Decoder.decodeInstruction(instruction)
@@ -118,7 +118,7 @@ class DecoderTest {
     @Test
     fun decoderTestJAR() {
         // given
-        val instruction = 0b0000000_00010_00000_000_00001_1101111u // jal x1, 32
+        val instruction = 0b0000001_00000_00000_000_00001_1101111u // jal x1, 32
         val expectedInstruction = UJTypeInstructionTypes.JAL
         val expectedOpcode = 0b1101111u
         val expectedRd = 0b00001u
@@ -135,9 +135,9 @@ class DecoderTest {
     }
 
     @Test
-    fun decoderTestswCommand() {
+    fun decoderTestSwCommand() {
         // given
-        val instruction = 0b1111111_11000_10000_010_11100_0100011u
+        val instruction = 0b1111111_11000_10000_010_01000_0100011u // sw x24, -24(x16)
         val expectedInstruction = SInstructionTypes.SW
         val expectedOpcode = 0b0100011u
         val expectedFunct3 = 0b010u
@@ -155,6 +155,28 @@ class DecoderTest {
         assertEquals(expectedRs1, actual.data.rs1)
         assertEquals(expectedRs2, actual.data.rs2)
         assertEquals(expectedImm, actual.data.imm)
+    }
 
+    @Test
+    fun decoderTestSBCommand() {
+        // given
+        val instruction = 0b0_000000_10100_01010_000_0010_0_1100011u // beq x10, x20, 4
+        val expectedInstruction = SBInstructionTypes.BEQ
+        val expectedOpcode = 0b1100011u
+        val expectedFunct3 = 0b000u
+        val expectedRs1 = 0b01010u
+        val expectedRs2 = 0b10100u
+        val expectedImm = 4
+
+        // when
+        val actual = Decoder.decodeInstruction(instruction)
+
+        // then
+        assertEquals(expectedInstruction, actual.type)
+        assertEquals(expectedOpcode, actual.data.opcode)
+        assertEquals(expectedFunct3, actual.data.funct3)
+        assertEquals(expectedRs1, actual.data.rs1)
+        assertEquals(expectedRs2, actual.data.rs2)
+        assertEquals(expectedImm, actual.data.imm)
     }
 }

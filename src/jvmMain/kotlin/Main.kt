@@ -12,7 +12,7 @@ fun main() {
     cpu.loadProgram(program)
 
     try {
-        while (true) {
+        repeat (1000) {
             cpu.step()
         }
     } catch (e: Exception) {

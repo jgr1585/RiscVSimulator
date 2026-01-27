@@ -100,7 +100,7 @@ object Decoder {
             }
 
             SB_TYPE_OPCODE -> { // SB-type instructions
-                val inst = STypeInstruction(instruction)
+                val inst = SBTypeInstruction(instruction)
 
                 when (inst.funct3) {
                     0x0u -> InstructionValue(inst, SBInstructionTypes.BEQ)  // BEQ
@@ -182,7 +182,7 @@ object Decoder {
 
 
 
-            else -> throw IllegalArgumentException("Invalid opcode: ${(instruction and MASK_OPCODE).toString(2).padStart(7, '0')}") // Print opcode in binary
+            else -> throw IllegalArgumentException("Invalid opcode: ${(instruction and MASK_OPCODE).toString(2).padStart(7, '0')}. Instuction: ${instruction.toString(16)}") // Print opcode in binary
         }
     }
 
