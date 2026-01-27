@@ -7,7 +7,7 @@ import kotlin.time.measureTime
 fun main() {
     val cpu = RISCVCpu()
 
-    val programFile = "./resources/square.hex"
+    val programFile = "./resources/riscvsimtest.hex"
     val programPath = Path(programFile)
     val program = readHexFromIntelFile(programPath)
 
