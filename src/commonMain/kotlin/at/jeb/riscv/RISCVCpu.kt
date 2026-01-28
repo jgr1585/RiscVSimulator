@@ -3,11 +3,11 @@ package at.jeb.riscv
 import at.jeb.riscv.components.Memory
 import at.jeb.riscv.components.Register
 import at.jeb.riscv.extensions.plus
-import at.jeb.riscv.instructions.*
+import at.jeb.riscv.instructions.InstructionType
 
 class RISCVCpu {
     val memory = Memory(32 * 1024) // 64MB Memory
-    val instructionMemory = InstructionMemory()
+    val instructionMemory = Memory()
     val register = Register()
 
     var pc: UInt = 0u
@@ -24,7 +24,7 @@ class RISCVCpu {
     var executedInstructionHistory = mutableListOf<String>()
         private set
 
-    private var decodedInst: Decoder.InstructionValue = Decoder.decodeInstruction(0x13u) // Default NOOP instruction (ADDI x0, x0, 0)
+    private var decodedInst = Decoder.decodeInstruction(0x13u) // Default NOOP instruction (ADDI x0, x0, 0)
 
     fun step(): Boolean {
         if (isHalted) return false
@@ -36,7 +36,7 @@ class RISCVCpu {
     }
 
     private fun loadInstruction() {
-        val instruction = instructionMemory.fetch(pc)
+        val instruction = instructionMemory.readWord(pc)
         decodedInst = Decoder.decodeInstruction(instruction)
 
         pc += 4u
@@ -59,151 +59,145 @@ class RISCVCpu {
 
     // Read from registers rs1 and rs2, perform ALU operation, write result to rd
     private fun executeInstruction() {
-        when (decodedInst.type.ftmType) {
-            FMTType.R_TYPE -> {
+        when (decodedInst.type) {
+            is InstructionType.R -> {
                 val result = decodedInst.type.aluFunction.invoke(
-                    register.read(decodedInst.data.rs1),
-                    register.read(decodedInst.data.rs2)
+                    register.read(decodedInst.format.rs1),
+                    register.read(decodedInst.format.rs2)
                 )
-                executedInstructionHistory.add("${decodedInst.type.instructionName} x${decodedInst.data.rd}, x${decodedInst.data.rs1}, x${decodedInst.data.rs2} => ${result.result}")
-                register.write(decodedInst.data.rd, result.result)
+                executedInstructionHistory.add("${decodedInst.type.instructionName} x${decodedInst.format.rd}, x${decodedInst.format.rs1}, x${decodedInst.format.rs2} => ${result.result}")
+                register.write(decodedInst.format.rd, result.result)
             }
 
-            FMTType.I_TYPE -> {
+            is InstructionType.I -> {
                 val result = decodedInst.type.aluFunction.invoke(
-                    register.read(decodedInst.data.rs1),
-                    decodedInst.data.imm.toUInt()
+                    register.read(decodedInst.format.rs1),
+                    decodedInst.format.imm.toUInt()
                 )
 
-                executedInstructionHistory.add("${decodedInst.type.instructionName} x${decodedInst.data.rd}, x${decodedInst.data.rs1}, ${decodedInst.data.imm} => ${result.result.toInt()}")
-                register.write(decodedInst.data.rd, result.result)
+                executedInstructionHistory.add("${decodedInst.type.instructionName} x${decodedInst.format.rd}, x${decodedInst.format.rs1}, ${decodedInst.format.imm} => ${result.result.toInt()}")
+                register.write(decodedInst.format.rd, result.result)
             }
 
-            FMTType.S_TYPE -> {
+            is InstructionType.S -> {
                 when (decodedInst.type) {
-                    SInstructionTypes.SW -> {
-                        val address = register.read(decodedInst.data.rs1) + decodedInst.data.imm
-                        val value = register.read(decodedInst.data.rs2)
+                    InstructionType.S.SW -> {
+                        val address = register.read(decodedInst.format.rs1) + decodedInst.format.imm
+                        val value = register.read(decodedInst.format.rs2)
                         memory.writeWord(address, value)
 
-                        executedInstructionHistory.add("sw x${decodedInst.data.rs2}, ${decodedInst.data.imm}(x${decodedInst.data.rs1}) => Mem[${address}] = $value")
+                        executedInstructionHistory.add("sw x${decodedInst.format.rs2}, ${decodedInst.format.imm}(x${decodedInst.format.rs1}) => Mem[${address}] = $value")
                     }
 
-                    SInstructionTypes.SH -> {
-                        val address = register.read(decodedInst.data.rs1) + decodedInst.data.imm
-                        val value = register.read(decodedInst.data.rs2)
+                    InstructionType.S.SH -> {
+                        val address = register.read(decodedInst.format.rs1) + decodedInst.format.imm
+                        val value = register.read(decodedInst.format.rs2)
                         memory.writeHalfWord(address, value.toUShort())
 
-                        executedInstructionHistory.add("sh x${decodedInst.data.rs2}, ${decodedInst.data.imm}(x${decodedInst.data.rs1}) => Mem[${address}] = ${value and 0xFFFFu}")
+                        executedInstructionHistory.add("sh x${decodedInst.format.rs2}, ${decodedInst.format.imm}(x${decodedInst.format.rs1}) => Mem[${address}] = ${value and 0xFFFFu}")
                     }
 
-                    SInstructionTypes.SB -> {
-                        val address = register.read(decodedInst.data.rs1) + decodedInst.data.imm
-                        val value = register.read(decodedInst.data.rs2)
+                    InstructionType.S.SB -> {
+                        val address = register.read(decodedInst.format.rs1) + decodedInst.format.imm
+                        val value = register.read(decodedInst.format.rs2)
                         memory.writeByte(address, value.toUByte())
 
-                        executedInstructionHistory.add("sb x${decodedInst.data.rs2}, ${decodedInst.data.imm}(x${decodedInst.data.rs1}) => Mem[${address}] = ${value and 0xFFu}")
+                        executedInstructionHistory.add("sb x${decodedInst.format.rs2}, ${decodedInst.format.imm}(x${decodedInst.format.rs1}) => Mem[${address}] = ${value and 0xFFu}")
                     }
                 }
             }
 
-            FMTType.SB_TYPE -> {
+            is InstructionType.SB -> {
                 val result = decodedInst.type.aluFunction.invoke(
-                    register.read(decodedInst.data.rs1),
-                    register.read(decodedInst.data.rs2)
+                    register.read(decodedInst.format.rs1),
+                    register.read(decodedInst.format.rs2)
                 )
 
                 if (result.zero) {
-                    val targetAddress = pc.toInt() - 4 + decodedInst.data.imm
+                    val targetAddress = pc.toInt() - 4 + decodedInst.format.imm
                     pc = targetAddress.toUInt()
 
-                    executedInstructionHistory.add("${decodedInst.type.instructionName} x${decodedInst.data.rs1}, x${decodedInst.data.rs2}, ${decodedInst.data.imm} => PC = $targetAddress")
+                    executedInstructionHistory.add("${decodedInst.type.instructionName} x${decodedInst.format.rs1}, x${decodedInst.format.rs2}, ${decodedInst.format.imm} => PC = $targetAddress")
                 } else {
-                    executedInstructionHistory.add("${decodedInst.type.instructionName} x${decodedInst.data.rs1}, x${decodedInst.data.rs2}, ${decodedInst.data.imm} => No branch taken")
+                    executedInstructionHistory.add("${decodedInst.type.instructionName} x${decodedInst.format.rs1}, x${decodedInst.format.rs2}, ${decodedInst.format.imm} => No branch taken")
                 }
             }
 
-            FMTType.I_TYPE_LOAD -> {
-                when (decodedInst.type) {
-                    ITypeLoaders.LW -> {
-                        val address = register.read(decodedInst.data.rs1) + decodedInst.data.imm
-                        val value = memory.readWord(address)
-                        register.write(decodedInst.data.rd, value)
 
-                        executedInstructionHistory.add("lw x${decodedInst.data.rd}, ${decodedInst.data.imm}(x${decodedInst.data.rs1}) => x${decodedInst.data.rd} = Mem[${address}] = $value")
-                    }
+            // Implementation on not generalizable instructions below
+            InstructionType.ILoad.LW -> {
+                val address = register.read(decodedInst.format.rs1) + decodedInst.format.imm
+                val value = memory.readWord(address)
+                register.write(decodedInst.format.rd, value)
 
-                    ITypeLoaders.LH -> {
-                        val address = register.read(decodedInst.data.rs1) + decodedInst.data.imm
-                        val value = memory.readHalfWord(address).toUInt()
-                        register.write(decodedInst.data.rd, value)
+                executedInstructionHistory.add("lw x${decodedInst.format.rd}, ${decodedInst.format.imm}(x${decodedInst.format.rs1}) => x${decodedInst.format.rd} = Mem[${address}] = $value")
+            }
 
-                        executedInstructionHistory.add("lh x${decodedInst.data.rd}, ${decodedInst.data.imm}(x${decodedInst.data.rs1}) => x${decodedInst.data.rd} = Mem[${address}] = ${value}")
-                    }
+            InstructionType.ILoad.LH -> {
+                val address = register.read(decodedInst.format.rs1) + decodedInst.format.imm
+                val value = memory.readHalfWord(address).toUInt()
+                register.write(decodedInst.format.rd, value)
 
-                    ITypeLoaders.LB -> {
-                        val address = register.read(decodedInst.data.rs1) + decodedInst.data.imm
-                        val value = memory.readByte(address).toUInt()
-                        register.write(decodedInst.data.rd, value)
+                executedInstructionHistory.add("lh x${decodedInst.format.rd}, ${decodedInst.format.imm}(x${decodedInst.format.rs1}) => x${decodedInst.format.rd} = Mem[${address}] = $value")
+            }
 
-                        executedInstructionHistory.add("lb x${decodedInst.data.rd}, ${decodedInst.data.imm}(x${decodedInst.data.rs1}) => x${decodedInst.data.rd} = Mem[${address}] = ${value}")
-                    }
+            InstructionType.ILoad.LB -> {
+                val address = register.read(decodedInst.format.rs1) + decodedInst.format.imm
+                val value = memory.readByte(address).toUInt()
+                register.write(decodedInst.format.rd, value)
 
-                    ITypeLoaders.JALR -> {
-                        val targetAddress = (register.read(decodedInst.data.rs1) + decodedInst.data.imm) and 0xFFFFFFFEu
-                        val returnAddress = pc
-                        register.write(decodedInst.data.rd, returnAddress)
-                        pc = targetAddress
+                executedInstructionHistory.add("lb x${decodedInst.format.rd}, ${decodedInst.format.imm}(x${decodedInst.format.rs1}) => x${decodedInst.format.rd} = Mem[${address}] = $value")
+            }
 
-                        if (targetAddress == 0u) {
-                            isHalted = true
-                            executedInstructionHistory.add("jalr x${decodedInst.data.rd}, ${decodedInst.data.imm}(x${decodedInst.data.rs1}) => HALT triggered")
-                        } else {
-                            val written = register.read(decodedInst.data.rd)
-                            executedInstructionHistory.add("jalr x${decodedInst.data.rd}, ${decodedInst.data.imm}(x${decodedInst.data.rs1}) => x${decodedInst.data.rd} = $written, PC = $targetAddress")
-                        }
-                    }
+            InstructionType.ILoad.JALR -> {
+                val targetAddress = (register.read(decodedInst.format.rs1) + decodedInst.format.imm) and 0xFFFFFFFEu
+                val returnAddress = pc
+                register.write(decodedInst.format.rd, returnAddress)
+                pc = targetAddress
 
-                    ITypeLoaders.MRET -> {
-                        // For simplicity, we assume MRET just sets PC to a fixed address (e.g., 0x00000000)
-                        val returnAddress = 0u
-                        pc = returnAddress
-
-                        executedInstructionHistory.add("mret => PC = $returnAddress")
-                    }
+                if (targetAddress == 0u) {
+                    isHalted = true
+                    executedInstructionHistory.add("jalr x${decodedInst.format.rd}, ${decodedInst.format.imm}(x${decodedInst.format.rs1}) => HALT triggered")
+                } else {
+                    val written = register.read(decodedInst.format.rd)
+                    executedInstructionHistory.add("jalr x${decodedInst.format.rd}, ${decodedInst.format.imm}(x${decodedInst.format.rs1}) => x${decodedInst.format.rd} = $written, PC = $targetAddress")
                 }
             }
 
-            FMTType.U_TYPE -> {
-                when (decodedInst.type) {
-                    UTypeInstructionTypes.LUI -> {
-                        val value = decodedInst.data.imm.toUInt() shl 12
-                        register.write(decodedInst.data.rd, value)
+            InstructionType.ILoad.MRET -> {
+                // For simplicity, we assume MRET just sets PC to a fixed address (e.g., 0x00000000)
+                val returnAddress = 0u
+                pc = returnAddress
 
-                        executedInstructionHistory.add("lui x${decodedInst.data.rd}, ${decodedInst.data.imm} => x${decodedInst.data.rd} = $value")
-                    }
-
-                    UTypeInstructionTypes.AUIPC -> {
-                        val value = pc - 4u + (decodedInst.data.imm.toUInt() shl 12)
-                        register.write(decodedInst.data.rd, value)
-
-                        executedInstructionHistory.add("auipc x${decodedInst.data.rd}, ${decodedInst.data.imm} => x${decodedInst.data.rd} = $value")
-                    }
-                }
+                executedInstructionHistory.add("mret => PC = $returnAddress")
             }
 
-            FMTType.UJ_TYPE -> {
-                when (decodedInst.type) {
-                    UJTypeInstructionTypes.JAL -> {
-                        val targetAddress = pc.toInt() - 4 + decodedInst.data.imm
-                        val returnAddress = pc
-                        register.write(decodedInst.data.rd, returnAddress)
-                        pc = targetAddress.toUInt()
+            InstructionType.U.LUI -> {
+                val value = decodedInst.format.imm.toUInt() shl 12
+                register.write(decodedInst.format.rd, value)
 
-                            val written = register.read(decodedInst.data.rd)
-                            executedInstructionHistory.add("jal x${decodedInst.data.rd}, ${decodedInst.data.imm} => x${decodedInst.data.rd} = $written, PC = $targetAddress")
-                    }
-                }
+                executedInstructionHistory.add("lui x${decodedInst.format.rd}, ${decodedInst.format.imm} => x${decodedInst.format.rd} = $value")
+            }
+
+            InstructionType.U.AUIPC -> {
+                val value = pc - 4u + (decodedInst.format.imm.toUInt() shl 12)
+                register.write(decodedInst.format.rd, value)
+
+                executedInstructionHistory.add("auipc x${decodedInst.format.rd}, ${decodedInst.format.imm} => x${decodedInst.format.rd} = $value")
+            }
+
+            InstructionType.UJ.JAL -> {
+                val targetAddress = pc.toInt() - 4 + decodedInst.format.imm
+                val returnAddress = pc
+                register.write(decodedInst.format.rd, returnAddress)
+                pc = targetAddress.toUInt()
+
+                    val written = register.read(decodedInst.format.rd)
+                    executedInstructionHistory.add("jal x${decodedInst.format.rd}, ${decodedInst.format.imm} => x${decodedInst.format.rd} = $written, PC = $targetAddress")
+            }
+
+            else -> {
+                throw IllegalArgumentException("Unsupported instruction type: ${decodedInst.type}")
             }
         }
     }

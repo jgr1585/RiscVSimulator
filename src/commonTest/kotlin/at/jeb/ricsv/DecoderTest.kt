@@ -1,7 +1,8 @@
 package at.jeb.ricsv
 
 import at.jeb.riscv.Decoder
-import at.jeb.riscv.instructions.*
+import at.jeb.riscv.instructions.InstructionFormat
+import at.jeb.riscv.instructions.InstructionType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -11,7 +12,7 @@ class DecoderTest {
     fun decoderAddiTest() {
         // given
         val instruction = 0b000000000001_00000_000_00001_0010011u // addi x1, x0, 1
-        val expectedInstruction = IInstructionTypes.ADDI
+        val expectedInstruction = InstructionType.I.ADDI
         val expectedOpcode = 0b0010011u
         val expectedRd = 0b00001u
         val expectedFunct3 = 0b000u
@@ -23,18 +24,18 @@ class DecoderTest {
 
         // then
         assertEquals(expectedInstruction, actual.type)
-        assertEquals(expectedOpcode, actual.data.opcode)
-        assertEquals(expectedRd, actual.data.rd)
-        assertEquals(expectedFunct3, actual.data.funct3)
-        assertEquals(expectedRs1, actual.data.rs1)
-        assertEquals(expectedImm.toInt(), actual.data.imm)
+        assertEquals(expectedOpcode, actual.format.opcode)
+        assertEquals(expectedRd, actual.format.rd)
+        assertEquals(expectedFunct3, actual.format.funct3)
+        assertEquals(expectedRs1, actual.format.rs1)
+        assertEquals(expectedImm.toInt(), actual.format.imm)
     }
 
     @Test
     fun decoderAddiWithNegativeImmediateTest() {
         // given
         val instruction = 0b111111110000_00001_000_00010_0010011u // addi x2, x1, -16
-        val expectedInstruction = IInstructionTypes.ADDI
+        val expectedInstruction = InstructionType.I.ADDI
         val expectedOpcode = 0b0010011u
         val expectedRd = 0b00010u
         val expectedFunct3 = 0b000u
@@ -46,11 +47,11 @@ class DecoderTest {
 
         // then
         assertEquals(expectedInstruction, actual.type)
-        assertEquals(expectedOpcode, actual.data.opcode)
-        assertEquals(expectedRd, actual.data.rd)
-        assertEquals(expectedFunct3, actual.data.funct3)
-        assertEquals(expectedRs1, actual.data.rs1)
-        assertEquals(expectedImm, actual.data.imm)
+        assertEquals(expectedOpcode, actual.format.opcode)
+        assertEquals(expectedRd, actual.format.rd)
+        assertEquals(expectedFunct3, actual.format.funct3)
+        assertEquals(expectedRs1, actual.format.rs1)
+        assertEquals(expectedImm, actual.format.imm)
     }
 
 
@@ -60,8 +61,8 @@ class DecoderTest {
         val instruction = 0b0000000_00010_00001_000_00011_0110011u // add x3, x1, x2
 
         val expected = Decoder.InstructionValue(
-            type = RInstructionTypes.ADD,
-            data = RTypeInstruction(instruction)
+            type = InstructionType.R.ADD,
+            format = InstructionFormat.R(instruction)
         )
 
         // when
@@ -75,7 +76,7 @@ class DecoderTest {
     fun decoderStoreTest() {
         // given
         val instruction = 0b0000000_00010_00001_010_00100_0100011u // sw x2, 4(x1)
-        val expectedInstruction = SInstructionTypes.SW
+        val expectedInstruction = InstructionType.S.SW
         val expectedOpcode = 0b0100011u
         val expectedFunct3 = 0b010u
         val expectedRs1 = 0b00001u
@@ -87,39 +88,39 @@ class DecoderTest {
 
         // then
         assertEquals(expectedInstruction, actual.type)
-        assertEquals(expectedOpcode, actual.data.opcode)
-        assertEquals(expectedFunct3, actual.data.funct3)
-        assertEquals(expectedRs1, actual.data.rs1)
-        assertEquals(expectedRs2, actual.data.rs2)
-        assertEquals(expectedImm, actual.data.imm)
+        assertEquals(expectedOpcode, actual.format.opcode)
+        assertEquals(expectedFunct3, actual.format.funct3)
+        assertEquals(expectedRs1, actual.format.rs1)
+        assertEquals(expectedRs2, actual.format.rs2)
+        assertEquals(expectedImm, actual.format.imm)
     }
 
     @Test
     fun decoderTestNegativeJumpAndLinkImmediate() {
         // given
         val instruction = 0b1111111_11111_11111_111_00001_1101111u // jal x1, -2
-        val expectedInstruction = UJTypeInstructionTypes.JAL
+        val expectedInstruction = InstructionType.UJ.JAL
         val expectedOpcode = 0b1101111u
         val expectedRd = 0b00001u
         val expectedImm = -2
 
         // when
         val actual = Decoder.decodeInstruction(instruction)
-        println("Decoded instruction: ${actual.data.imm.toUInt().toString(2)}")
+        println("Decoded instruction: ${actual.format.imm.toUInt().toString(2)}")
         println("Expected immediate : ${expectedImm.toUInt().toString(2)}")
 
         // then
         assertEquals(expectedInstruction, actual.type)
-        assertEquals(expectedOpcode, actual.data.opcode)
-        assertEquals(expectedRd, actual.data.rd)
-        assertEquals(expectedImm, actual.data.imm)
+        assertEquals(expectedOpcode, actual.format.opcode)
+        assertEquals(expectedRd, actual.format.rd)
+        assertEquals(expectedImm, actual.format.imm)
     }
 
     @Test
     fun decoderTestJAR() {
         // given
         val instruction = 0b0000001_00000_00000_000_00001_1101111u // jal x1, 32
-        val expectedInstruction = UJTypeInstructionTypes.JAL
+        val expectedInstruction = InstructionType.UJ.JAL
         val expectedOpcode = 0b1101111u
         val expectedRd = 0b00001u
         val expectedImm = 32
@@ -129,16 +130,16 @@ class DecoderTest {
 
         // then
         assertEquals(expectedInstruction, actual.type)
-        assertEquals(expectedOpcode, actual.data.opcode)
-        assertEquals(expectedRd, actual.data.rd)
-        assertEquals(expectedImm, actual.data.imm)
+        assertEquals(expectedOpcode, actual.format.opcode)
+        assertEquals(expectedRd, actual.format.rd)
+        assertEquals(expectedImm, actual.format.imm)
     }
 
     @Test
     fun decoderTestSwCommand() {
         // given
         val instruction = 0b1111111_11000_10000_010_01000_0100011u // sw x24, -24(x16)
-        val expectedInstruction = SInstructionTypes.SW
+        val expectedInstruction = InstructionType.S.SW
         val expectedOpcode = 0b0100011u
         val expectedFunct3 = 0b010u
         val expectedRs1 = 0b10000u
@@ -150,18 +151,18 @@ class DecoderTest {
 
         // then
         assertEquals(expectedInstruction, actual.type)
-        assertEquals(expectedOpcode, actual.data.opcode)
-        assertEquals(expectedFunct3, actual.data.funct3)
-        assertEquals(expectedRs1, actual.data.rs1)
-        assertEquals(expectedRs2, actual.data.rs2)
-        assertEquals(expectedImm, actual.data.imm)
+        assertEquals(expectedOpcode, actual.format.opcode)
+        assertEquals(expectedFunct3, actual.format.funct3)
+        assertEquals(expectedRs1, actual.format.rs1)
+        assertEquals(expectedRs2, actual.format.rs2)
+        assertEquals(expectedImm, actual.format.imm)
     }
 
     @Test
     fun decoderTestSBCommand() {
         // given
         val instruction = 0b0_000000_10100_01010_000_0010_0_1100011u // beq x10, x20, 4
-        val expectedInstruction = SBInstructionTypes.BEQ
+        val expectedInstruction = InstructionType.SB.BEQ
         val expectedOpcode = 0b1100011u
         val expectedFunct3 = 0b000u
         val expectedRs1 = 0b01010u
@@ -173,10 +174,10 @@ class DecoderTest {
 
         // then
         assertEquals(expectedInstruction, actual.type)
-        assertEquals(expectedOpcode, actual.data.opcode)
-        assertEquals(expectedFunct3, actual.data.funct3)
-        assertEquals(expectedRs1, actual.data.rs1)
-        assertEquals(expectedRs2, actual.data.rs2)
-        assertEquals(expectedImm, actual.data.imm)
+        assertEquals(expectedOpcode, actual.format.opcode)
+        assertEquals(expectedFunct3, actual.format.funct3)
+        assertEquals(expectedRs1, actual.format.rs1)
+        assertEquals(expectedRs2, actual.format.rs2)
+        assertEquals(expectedImm, actual.format.imm)
     }
 }

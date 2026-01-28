@@ -7,8 +7,6 @@ class Memory(val size: Int = 1024) {
     private val memory = UByteArray(size)
 
     fun readByte(address: UInt): UByte {
-        val address = address
-
         if (address >= memory.size) {
             throw IndexOutOfBoundsException("Address out of bounds: $address")
         }
@@ -17,8 +15,6 @@ class Memory(val size: Int = 1024) {
     }
 
     fun readHalfWord(address: UInt): UShort {
-        val address = address
-
         if (address + 1 >= memory.size) {
             throw IndexOutOfBoundsException("Address out of bounds: $address")
         }
@@ -27,8 +23,6 @@ class Memory(val size: Int = 1024) {
     }
 
     fun readWord(address: UInt): UInt {
-        val address = address
-
         if (address + 3 >= memory.size) {
             throw IndexOutOfBoundsException("Address out of bounds: $address")
         }
@@ -40,8 +34,6 @@ class Memory(val size: Int = 1024) {
     }
 
     fun writeByte(address: UInt, value: UByte) {
-        val address = address
-
         if (address >= memory.size) {
             throw IndexOutOfBoundsException("Address out of bounds: $address")
         }
@@ -50,8 +42,6 @@ class Memory(val size: Int = 1024) {
     }
 
     fun writeHalfWord(address: UInt, value: UShort) {
-        val address = address.toInt()
-
         if (address + 1 >= memory.size) {
             throw IndexOutOfBoundsException("Address out of bounds: $address")
         }
@@ -61,8 +51,6 @@ class Memory(val size: Int = 1024) {
     }
 
     fun writeWord(address: UInt, value: UInt) {
-        val address = address
-
         if (address + 3 >= memory.size) {
             throw IndexOutOfBoundsException("Address out of bounds: $address")
         }
@@ -71,6 +59,19 @@ class Memory(val size: Int = 1024) {
         memory[address + 1] = ((value shr 8) and 0xFFu).toUByte()
         memory[address + 2] = ((value shr 16) and 0xFFu).toUByte()
         memory[address + 3] = ((value shr 24) and 0xFFu).toUByte()
+    }
+
+    fun load(program: UIntArray) {
+        if (program.size > memory.size) {
+            throw IndexOutOfBoundsException("Program size exceeds memory bounds")
+        }
+
+        program.forEachIndexed { index, i ->
+            memory[index * 4] = (i and 0xFFu).toUByte()
+            memory[index * 4 + 1] = ((i shr 8) and 0xFFu).toUByte()
+            memory[index * 4 + 2] = ((i shr 16) and 0xFFu).toUByte()
+            memory[index * 4 + 3] = ((i shr 24) and 0xFFu).toUByte()
+        }
     }
 
     fun printMemoryDump(startAddress: Int = 0, endAddress: Int = memory.size - 1) {
