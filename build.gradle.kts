@@ -17,6 +17,10 @@ repositories {
 
 kotlin {
 
+    compilerOptions {
+        optIn.add("kotlin.ExperimentalUnsignedTypes")
+    }
+
     // Add Kotlin/JVM target
     jvm {
         compilerOptions {
